@@ -24,10 +24,10 @@ class Kernel {
     static Process? idle = null
     static Process? current = null
 
-    // next_pid — aloca um pid sequencial (espelha o alocador do VibeOS).
-    static Int nextPid() {
-        val pid = nextPid
-        nextPid = nextPid + 1
+    // allocate_pid — aloca um pid sequencial (espelha o alocador do VibeOS).
+    static Int allocatePid() {
+        val pid = Kernel.nextPid
+        Kernel.nextPid = Kernel.nextPid + 1
         return pid
     }
 }

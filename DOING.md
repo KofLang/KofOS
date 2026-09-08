@@ -16,10 +16,14 @@ Estados: `ABERTO` · `EM CURSO` · `FEITO` · `BLOQUEADO`.
 
 ## PRÓXIMO PASSO (re-dispacho lê isto)
 
-**PRÓXIMO PASSO (07/09)**: criar a fundação do KofOS — `kernel/boot.kf`
-(`kernel_entry` + fase de boot + HAL simulado) + `Main.kf` que orquestra
-`boot → kernel_entry → init → userland → shell`. Prova: `kof check` + `kof run`
-imprime a sequência de boot. Depois: scheduler.
+**PRÓXIMO PASSO (07/09)**: fundação FEITA (este commit) — `Main.kf` → `kernel_entry`
+→ HAL → memory → storage → scheduler → VFS → syscalls → userland (init + shell).
+Prova: `kof run Main.kf` imprime a sequência de boot completa até "done" + `kof
+test boot_test.kf` (2 testes PASS). Gap HW001 documentado em AGENTS.md.
+PRÓXIMO: **PORT-SCHED** — preempção real por timer (`kof.time.interval`),
+timeslice, bloqueio/espera (waitable), round-robin com prioridade em
+`kernel/scheduler.kf`. Prova: `kof test` verifica que 2+ processos alternam
+ticks e que um processo bloqueado não roda.
 
 ---
 
@@ -27,8 +31,8 @@ imprime a sequência de boot. Depois: scheduler.
 
 | Gap/Item | Estado | Dono | Branch | Arquivos principais | Notas |
 |---|---|---|---|---|---|
-| **PORT-TODO** — fundação (boot + HAL + Main) | `EM CURSO` | agente-kofos | `main` | `kernel/boot.kf`, `kernel/hal/`, `Main.kf` | 07/09: toolchain confirmado (JDK21 + kof.jar + hello.kf roda). Analisado o kernel do VibeOS (relatório completo no AGENTS.md). Gap HW001 decidido (kernel hosted). Começando boot.kf |
-| **PORT-SCHED** — scheduler + processos + preempção | `ABERTO` | — | — | `kernel/scheduler.kf`, `kernel/process.kf` | após boot |
+| **PORT-TODO** — fundação (boot + HAL + Main) | `FEITO` | agente-kofos | `main` | `Main.kf`, `kernel/boot.kf`, `kernel/hal/hal.kf`, `kernel/kernel_init.kf`, `kernel/globals.kf`, `kernel/process.kf`, `kernel/scheduler.kf`, `userland/userland.kf`, `boot_test.kf` | 07/09: boot→kernel_entry→init→shell→done roda. 2 testes PASS. Mecanismo de import descoberto: `import <dir>.<arquivo>` carrega `<dir>/<arquivo>.kf`; testes E2E na raiz do módulo. |
+| **PORT-SCHED** — scheduler + processos + preempção | `ABERTO` | — | — | `kernel/scheduler.kf` | PRÓXIMO (após fundação) |
 | **PORT-MEM** — heap, páginas, arenas | `ABERTO` | — | — | `kernel/memory.kf` | após scheduler |
 | **PORT-SYSCALL** — syscalls + IPC + waitable | `ABERTO` | — | — | `kernel/syscall.kf`, `kernel/ipc.kf` | após mem |
 | **PORT-SERVICES** — microkernel (init/video/input/fs/storage/console) | `ABERTO` | — | — | `kernel/services/` | após syscall |

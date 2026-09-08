@@ -1,0 +1,35 @@
+// tests/boot_test.kf — Teste E2E do fluxo de boot (gate de merge).
+//
+// Prova que o kernel_entry executa a sequência completa de boot
+// (boot → kernel_entry → init → shell → done) sem erro.
+
+import kernel.boot
+
+test "boot sequence completes" {
+    kernel_entry()
+    assert(BootGlobals.halReady, "hal deve estar pronto")
+    assert(BootGlobals.memoryReady, "memoria deve estar pronta")
+    assert(BootGlobals.schedulerReady, "scheduler deve estar pronto")
+    assert(BootGlobals.syscallsReady, "syscalls devem estar prontos")
+    assert(UserlandGlobals.initRan, "init deve ter rodado")
+    assert(UserlandGlobals.shellStarted, "shell deve ter iniciado")
+    assert(BootGlobals.trace != null, "trace de boot deve existir")
+    assert(BootGlobals.trace.contains("done"), "boot deve chegar em done")
+}
+
+test "trace marks phases in order" {
+    kernel_entry()
+    var t = BootGlobals.trace
+    assert(t != null, "trace existe")
+    if (t != null) {
+        assert(t.contains("kernel_entry"), "comeca no kernel_entry")
+        assert(t.contains("memory"), "passa por memory")
+        assert(t.contains("scheduler"), "passa por scheduler")
+        assert(t.contains("userland"), "passa por userland")
+        assert(t.get(t.size - 1) == "done", "termina em done")
+    }
+}
+
+main() {
+    println("run tests via: kof test")
+}

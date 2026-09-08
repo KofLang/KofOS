@@ -31,22 +31,22 @@ class Process {
     Int contextSwitches
     Int entryPoint
     Int stackSize
-    Int? waitChannel
+    Int waitChannel
     Bool preemptable
     Process? next
 
     public constructor(Int pid, String name, Int kind, Int priority) {
         this.pid = pid
         this.name = name
-        this.state = ProcState.READY
         this.kind = kind
         this.priority = priority
-        this.runtimeTicks = 0
-        this.contextSwitches = 0
-        this.entryPoint = 0
-        this.stackSize = 0
-        this.waitChannel = null
-        this.preemptable = true
-        this.next = null
+        state = ProcState.READY
+        runtimeTicks = 0
+        contextSwitches = 0
+        entryPoint = 0
+        stackSize = 0
+        waitChannel = -1
+        preemptable = true
+        next = null
     }
 }

@@ -26,9 +26,12 @@ class BootGlobals {
     static Bool memoryReady = false
     static Bool schedulerReady = false
     static Bool syscallsReady = false
-    static List<String> trace = listOf()
+    static List<String>? trace = null
 
     static void mark(String phase) {
+        if (trace == null) {
+            trace = listOf()
+        }
         trace.add(phase)
     }
 }

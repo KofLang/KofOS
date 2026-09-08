@@ -36,11 +36,11 @@ void kernel_shell_main() {
 // kernel_userland_bootstrap — cria e agenda init + shell (espelha userland_run).
 Bool kernel_userland_bootstrap() {
     // Processo init (SUPERVISION).
-    val initPid = Kernel.nextPid()
+    val initPid = Kernel.allocatePid()
     var initProc = Process(initPid, "init", ProcKind.USER, 5)
 
     // Processo shell (userland.app).
-    val shellPid = Kernel.nextPid()
+    val shellPid = Kernel.allocatePid()
     var shellProc = Process(shellPid, "userland.app", ProcKind.USER, 4)
 
     // Agenda no scheduler.
