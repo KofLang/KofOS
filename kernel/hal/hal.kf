@@ -169,10 +169,3 @@ class HAL_storage {
         return true
     }
 }
-
-// kernel_hal_init — instancia e inicializa o HAL no boot (espelha hal_init()).
-void kernel_hal_init() {
-    // Os HALs são criados no boot e guardados como globais do kernel via
-    // KernelGlobals. O VibeOS faz hal_init() aqui; no port, os objetos
-    // específicos são criados pelo kernel_entry conforme a ordem de boot.
-}

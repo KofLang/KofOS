@@ -6,6 +6,10 @@
 // execução (que, no modo cooperativo inicial, chama as funções de entrada).
 
 import kof.time
+import kernel.boot
+import kernel.globals
+import kernel.process
+import kernel.scheduler
 
 // UserlandGlobals — estado do userland.
 class UserlandGlobals {

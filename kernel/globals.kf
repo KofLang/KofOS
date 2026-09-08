@@ -4,6 +4,9 @@
 // vive em campos estáticos desta classe Kernel. (Kof não tem top-level
 // val/var; classes com static são o mecanismo idiomático — ver training.)
 
+import kernel.hal
+import kernel.process
+
 // Kernel — singleton de estado do kernel KofOS.
 class Kernel {
     // HAL instances (setados no boot via kernel_hal_init).

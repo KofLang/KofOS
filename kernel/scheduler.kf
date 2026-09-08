@@ -5,6 +5,8 @@
 // boot sequenciais no modo cooperativo inicial; a preempção real por timer
 // será adicionada na fase PORT-SCHED (usando kof.time.interval).
 
+import kernel.process
+
 // Scheduler — núcleo da multitarefa.
 class Scheduler {
     // Lista ligada de processos (g_head no VibeOS).

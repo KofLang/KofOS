@@ -5,6 +5,10 @@
 // aqui (o único ponto que toca o host Kof).
 
 import kof.time
+import kernel.hal
+import kernel.globals
+import kernel.scheduler
+import userland
 
 // kernel_hal_init — instancia os HALs (espelha hal_init()).
 void kernel_hal_init() {

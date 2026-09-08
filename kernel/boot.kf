@@ -5,7 +5,8 @@
 // primeira fase do boot, chamada por Main.kf. A ordem de inicializacao
 // espelha fielmente kernel/entry.c do VibeOS.
 
-import kof.time
+import kernel.hal
+import kernel.kernel_init
 
 // Console de texto do boot (porta para kernel_text_puts do VibeOS).
 class BootLog {

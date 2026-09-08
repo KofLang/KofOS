@@ -5,7 +5,7 @@
 // esta aplicação; Main.kf entrega o controle ao kernel_entry, preservando o
 // mesmo fluxo de boot como fases de uma aplicação Kof.
 
-import kof.time
+import kernel.boot
 
 main() {
     BootLog.puts("KofOS booting via host runtime")
