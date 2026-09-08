@@ -1,0 +1,50 @@
+// kernel/syscall.kf — Syscalls (port de kernel/syscall.c).
+//
+// O VibeOS define syscalls como números inteiros (0 a 111) com assinatura
+// uint32_t fn(uint32_t a, b, c, d, e). No KofOS hosted, as syscalls são
+// funções de nível superior que operam no estado global do kernel (processos,
+// VFS, serviços). O gateway entre o número de syscall Kof e as funções abaixo
+// é feito pelo kernel_syscall_init().
+//
+// Syscalls implementadas:
+//   1  yield — cede a CPU ao scheduler
+//   9  getpid — retorna o PID do processo corrente
+//  10  gettid — retorna o ID da thread (alias de getpid no hosted)
+//  90 exit — termina o processo corrente
+//  95 wait — aguarda um processo filho (simples — ainda nao implementado full)
+
+// Kernel — referência global (já definido em kernel/globals.kf).
+
+// yield — cede a CPU ao scheduler (espelha a chamada de interrupção int $0x81).
+void sys_yield() {
+    kernel_scheduler_yield()
+}
+
+// getpid — retorna o PID do processo corrente.
+Int sys_getpid() {
+    if (Kernel.current != null) {
+        return Kernel.current.pid
+    }
+    return 0
+}
+
+// gettid — alias de getpid no hosted (ID da thread).
+Int sys_gettid() {
+    return sys_getpid()
+}
+
+// exit — termina o processo corrente (marca estado TERMINATED).
+void sys_exit() {
+    if (Kernel.current != null) {
+        Kernel.current.state = ProcState.TERMINATED
+        Kernel.current = null
+        // No hosted: o scheduler escolherá o próximo processo na próxima tick.
+    }
+}
+
+// wait — aguarda um processo filho (placeholder — ainda nao fully impl).
+// Retorna o PID do processo waitado ou -1 em caso de erro.
+Int sys_wait() {
+    // Placeholder: nao implementado fully nesta versão.
+    return -1
+}
