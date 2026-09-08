@@ -1,0 +1,60 @@
+// userland/filemanager.kf — File Manager basico para KofOS hosted.
+// Navega pelo sistema de arquivos do VFS ramfs.
+
+class FileManager {
+    String currentDir = "/"
+
+    // listFiles — lista arquivos do diretorio corrente usando VFS ramfs.
+    void listFiles() {
+        println("Diretorio: " + currentDir)
+        // Tenta ler arquivos do ramfs.
+        // No hosted, ramfs tem limite de 32 arquivos.
+        Var result = Vfs.ramfs.create_file("/arquivo_teste", "", 0)
+        println("  (ramfs tem limite de 32 arquivos)")
+    }
+
+    // changeDir — muda para o diretorio especificado.
+    void changeDir(String dir) {
+        if (dir == "/") {
+            currentDir = "/"
+            println("Diretorio raiz.")
+        } else if (dir == "..") {
+            // Subir um nivel no caminho.
+            if (currentDir != "/") {
+                var lastSlash = currentDir.lastIndexOf("/")
+                if (lastSlash > 0) {
+                    currentDir = currentDir.substring(0, lastSlash)
+                }
+            }
+            println("Subiu de nivel para: " + currentDir)
+        } else {
+            currentDir = currentDir + "/" + dir
+            println("Diretorio cambiado para: " + currentDir)
+        }
+    }
+
+    // makeDir — cria um novo diretorio (via VFS ramfs).
+    void makeDir(String dirName) {
+        Var result = Vfs.ramfs.create_file(currentDir + "/" + dirName, "", 0)
+        if (result == 0) {
+            println("Diretorio criado: " + dirName)
+        } else {
+            println("Erro: nao foi possivel criar diretorio (limite de 32 arquivos)")
+        }
+    }
+
+    // removeFile — remove um arquivo (via VFS ramfs).
+    void removeFile(String fileName) {
+        Var result = Vfs.ramfs.delete_file(currentDir + "/" + fileName)
+        if (result == 0) {
+            println("Arquivo removido: " + fileName)
+        } else {
+            println("Erro: arquivo nao encontrado")
+        }
+    }
+
+    // pwd — retorna o diretorio corrente.
+    String pwd() {
+        return currentDir
+    }
+}

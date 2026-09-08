@@ -1,0 +1,26 @@
+// userland/editor.kf — Editor de Texto basico.
+// Fornece funcionalidades simples de edit e visualizacao de texto.
+
+class Editor {
+    String content = ""
+
+    // setText — define o conteudo do editor.
+    void setContent(String text) {
+        content = text
+    }
+
+    // getContent — retorna o conteudo atual.
+    String getContent() {
+        return content
+    }
+
+    // append — adiciona texto ao final.
+    void append(String text) {
+        content = content + text
+    }
+
+    // clear — limpa o conteudo.
+    void clear() {
+        content = ""
+    }
+}

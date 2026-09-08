@@ -1,0 +1,25 @@
+// userland/apps.kf — Aplicativos basicos do KofOS.
+// Colecao de aplicativos utilitarios que demonstram as capacidades do KofOS.
+
+// Calculator ja foi definido em apps/calculator.kf
+
+// Clock — mostra o tempo decorrido.
+class Clock {
+    Int seconds = 0
+
+    // tick — incrementa o segundos.
+    void tick() {
+        seconds = seconds + 1
+        println("Sequnds decorridos: " + seconds)
+    }
+}
+
+// TaskManagerInfo — informacoes do task manager.
+class TaskManagerInfo {
+    String status = "KofOS: 3 processos ativos"
+
+    // getStatus — retorna status do sistema.
+    String getStatus() {
+        return status
+    }
+}

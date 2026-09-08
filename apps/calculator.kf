@@ -1,0 +1,36 @@
+// apps/calculator.kf — Calculadora basica.
+// A simple calculator with add, subtract, multiply, divide operations.
+
+class Calculator {
+    // add — soma dois numeros.
+    static Int add(Int a, Int b) {
+        return a + b
+    }
+
+    // subtract — subtracao.
+    static Int subtract(Int a, Int b) {
+        return a - b
+    }
+
+    // multiply — multiplicacao.
+    static Int multiply(Int a, Int b) {
+        return a * b
+    }
+
+    // divide — divisao (inteira).
+    static Int divide(Int a, Int b) {
+        if (b == 0) {
+            println("Erro: divisao por zero!")
+            return 0
+        }
+        return a / b
+    }
+}
+
+main() {
+    println("Calculadora KofOS")
+    println("add(3, 5) = " + Calculator.add(3, 5))
+    println("subtract(10, 4) = " + Calculator.subtract(10, 4))
+    println("multiply(6, 7) = " + Calculator.multiply(6, 7))
+    println("divide(10, 2) = " + Calculator.divide(10, 2))
+}

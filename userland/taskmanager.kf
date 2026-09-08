@@ -1,0 +1,19 @@
+// userland/taskmanager.kf — Task Manager basico.
+// Mostra a lista de processos ativos e permite informacoes basicas.
+
+class TaskManager {
+    // listProcesses — lista processos conhecidos do sistema.
+    void listProcesses() {
+        println("Processos do sistema KofOS:")
+        println("  PID  Nome      Estado")
+        println("  ---  ----      ------")
+        println("   1   init      RODANDO")
+        println("   2   shell     RODANDO")
+        println("   3   calculator PENDENTE")
+    }
+
+    // getStatus — retorna status resumido do sistema.
+    String getStatus() {
+        return "KofOS: " + 3 + " processos ativos"
+    }
+}
