@@ -1,7 +1,7 @@
-// userland/apps.kf — Aplicativos basicos do KofOS.
+// userland/apps.kf — Aplicativos basicos do KofOS hosted.
 // Colecao de aplicativos utilitarios que demonstram as capacidades do KofOS.
 
-// Calculator ja foi definido em apps/calculator.kf
+// Calculator ja foi definido em calculator.kf
 
 // Clock — mostra o tempo decorrido.
 class Clock {
@@ -10,7 +10,7 @@ class Clock {
     // tick — incrementa o segundos.
     void tick() {
         seconds = seconds + 1
-        println("Sequnds decorridos: " + seconds)
+        println("Sequndos decorridos: " + seconds)
     }
 }
 

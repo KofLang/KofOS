@@ -1,10 +1,10 @@
-// userland/editor.kf — Editor de Texto basico.
+// userland/editor.kf — Editor de Texto basico para KofOS hosted.
 // Fornece funcionalidades simples de edit e visualizacao de texto.
 
 class Editor {
     String content = ""
 
-    // setText — define o conteudo do editor.
+    // setContent — define o conteudo do editor.
     void setContent(String text) {
         content = text
     }

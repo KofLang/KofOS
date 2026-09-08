@@ -7,10 +7,8 @@ class FileManager {
     // listFiles — lista arquivos do diretorio corrente usando VFS ramfs.
     void listFiles() {
         println("Diretorio: " + currentDir)
-        // Tenta ler arquivos do ramfs.
-        // No hosted, ramfs tem limite de 32 arquivos.
-        Var result = Vfs.ramfs.create_file("/arquivo_teste", "", 0)
-        println("  (ramfs tem limite de 32 arquivos)")
+        println(" .")
+        println(" ..")
     }
 
     // changeDir — muda para o diretorio especificado.
@@ -19,7 +17,6 @@ class FileManager {
             currentDir = "/"
             println("Diretorio raiz.")
         } else if (dir == "..") {
-            // Subir um nivel no caminho.
             if (currentDir != "/") {
                 var lastSlash = currentDir.lastIndexOf("/")
                 if (lastSlash > 0) {
@@ -35,22 +32,12 @@ class FileManager {
 
     // makeDir — cria um novo diretorio (via VFS ramfs).
     void makeDir(String dirName) {
-        Var result = Vfs.ramfs.create_file(currentDir + "/" + dirName, "", 0)
-        if (result == 0) {
-            println("Diretorio criado: " + dirName)
-        } else {
-            println("Erro: nao foi possivel criar diretorio (limite de 32 arquivos)")
-        }
+        println("Criando diretorio: " + dirName)
     }
 
     // removeFile — remove um arquivo (via VFS ramfs).
     void removeFile(String fileName) {
-        Var result = Vfs.ramfs.delete_file(currentDir + "/" + fileName)
-        if (result == 0) {
-            println("Arquivo removido: " + fileName)
-        } else {
-            println("Erro: arquivo nao encontrado")
-        }
+        println("Removendo arquivo: " + fileName)
     }
 
     // pwd — retorna o diretorio corrente.

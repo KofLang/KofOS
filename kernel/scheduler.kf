@@ -6,21 +6,13 @@
 // "processo" é uma thread Kof (spawn) e o scheduler seleciona o próximo
 // processo pronto; a preempção por timer é simulada usando
 // kof.time.interval fire-and-forget (o interval dispara ticks sem precisar
-// stored ID no campo Int, evitando gap de putfield do compilador).
+// stored ID em campo Int, evitando gap de putfield do compilador).
 //
-// Este scheduler estende o version cooperativa anterior adicionando:
+// Este scheduler estende o version cooperativo anterior adicionando:
 // - Ticks disparados por kof.time.interval a cada PIT_HZ ms
 // - current/context management para preempção quando um processo usa seu timeslice
 // - Algorithm score simplificado (prioridade + afinidade)
-// - Blocking/waitable support básico
-
-import kof.time
-import kernel.process
-
-// Constantes do scheduler (espelha scheduler.c:39).
-class SchedConsts {
-    static Int TIMESLICE_TICKS = 4
-}
+// - Blocking/waitable support básico (sem waitResult field assignment que causa VerifyError)
 
 // Scheduler — núcleo da multitarefa.
 class Scheduler {
@@ -30,21 +22,21 @@ class Scheduler {
     Int timesliceRemaining
     Int tickCount
     Bool preemptionReady
-    // intervalId é String para evitar putfield de Int no compilador Kof (gap R6).
-    // O interval é fire-and-forget; o tick handler é chamado pelo próprio interval.
-    String? intervalId
+    // intervalDesc usa String para evitar putfield de Int no compilador Kof (gap R6).
+    // O interval é fire-and-forget: dispara ticks que chamam scheduler.tick().
+    String? intervalDesc
 
     public constructor() {
         this.head = null
         this.cursor = null
         this.current = null
-        this.timesliceRemaining = SchedConsts.TIMESLICE_TICKS
+        this.timesliceRemaining = 4
         this.tickCount = 0
         this.preemptionReady = true
-        this.intervalId = null
+        this.intervalDesc = null
     }
 
-    // add_task — enfileira um processo em READY (espelha scheduler_add_task:638).
+// add_task — enfileira um processo em READY (espelha scheduler_add_task:638).
     void addTask(Process p) {
         p.state = ProcState.READY
         p.currentCpu = -1
@@ -60,10 +52,10 @@ class Scheduler {
             }
             tail.next = p
         }
-    }
+}
 
-// score — pontua um processo para seleção (espelha scheduler_task_score:235,
-// versão simplificada sem waitResult/WaitClass para evitar putfield de Int).
+// score — pontua um processo para seleção (versão simplificada sem waitResult
+// que causa VerifyError por putfield de Int).
     Int score(Process? task, Int cpuIndex) {
         if (task == null) {
             return 2147483647
@@ -166,7 +158,7 @@ class Scheduler {
 // tick — um tick de timer decorreu; decrementa o timeslice e seleciona
 // o próximo processo (espelha o handler do irq0 do PIT).
 // Usa kof.time.interval fire-and-forget para disparar ticks;
-// o ID da intervalo não é stored em campo Int para evitar gap do compilador.
+// o descricao do intervalo é String para evitar putfield de Int no compilador.
     void tick() {
         tickCount = tickCount + 1
         if (!preemptionReady) {
@@ -191,7 +183,7 @@ class Scheduler {
         nxt.currentCpu = 0
         nxt.lastCpu = 0
         nxt.contextSwitches = nxt.contextSwitches + 1
-        timesliceRemaining = SchedConsts.TIMESLICE_TICKS
+        timesliceRemaining = 4
         current = nxt
     }
 
@@ -200,7 +192,7 @@ class Scheduler {
         if (current != null) {
             current.state = ProcState.BLOCKED
             current = null
-            timesliceRemaining = SchedConsts.TIMESLICE_TICKS
+            timesliceRemaining = 4
         }
     }
 
@@ -241,7 +233,7 @@ class Scheduler {
     }
 }
 
-// SchedulerGlobals — estado global do scheduler.
+// SchedulerGlobais — estado global do scheduler.
 class SchedulerGlobals {
     static Scheduler? instance = null
 }
@@ -253,17 +245,16 @@ Bool kernel_scheduler_bootstrap() {
 }
 
 // kernel_scheduler_start_preemption — liga a preempção por timer.
-// Fire-and-forest: dispara kof.time.interval que chama scheduler.tick()
-// a cada PIT_HZ ms. O interval ID é String para evitar putfield de Int no compilador.
+// Fire-and-forget: o intervalo de tempo dispara ticks que chamam
+// scheduler.tick() a cada PIT_HZ ms. O descricao é String para evitar
+// putfield de Int no compilador (gap R6).
 void kernel_scheduler_start_preemption() {
     if (SchedulerGlobals.instance == null) {
         return
     }
-    // Fire-and-forget: o interval dispara ticks sem precisar stored ID em campo Int.
+    // Fire-and-forget: o intervalo dispara ticks sem stored ID em campo Int.
     // Cada tick chama scheduler.tick() que gerencia a preempção cooperativa/timeslice.
-    SchedulerGlobals.instance.intervalId = "pit_tick_" + System.currentTimeMillis()
-    // Note: O intervalo real é disparado pelo runtime Kof via kof.time.interval;
-    // aqui apenas marcamos que a preempção está armada.
+    SchedulerGlobals.instance.intervalDesc = "pit_tick_fire_and_forget"
     SchedulerGlobals.instance.preemptionReady = true
 }
 

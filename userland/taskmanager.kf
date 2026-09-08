@@ -1,8 +1,8 @@
-// userland/taskmanager.kf — Task Manager basico.
-// Mostra a lista de processos ativos e permite informacoes basicas.
+// userland/taskmanager.kf — Task Manager basico para KofOS hosted.
+// Mostra a lista de processos ativos e informaacoes basicas.
 
 class TaskManager {
-    // listProcesses — lista processos conhecidos do sistema.
+    // listProcessos — lista processos conhecidos do sistema.
     void listProcesses() {
         println("Processos do sistema KofOS:")
         println("  PID  Nome      Estado")

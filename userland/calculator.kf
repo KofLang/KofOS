@@ -1,0 +1,26 @@
+// userland/calculator.kf — Calculadora basica para KofOS hosted.
+
+class Calculator {
+    // add — soma dois numeros inteiros.
+    static Int add(Int a, Int b) {
+        return a + b
+    }
+
+    // subtract — subtrai b de a.
+    static Int subtract(Int a, Int b) {
+        return a - b
+    }
+
+    // multiply — multiplica a por b.
+    static Int multiply(Int a, Int b) {
+        return a * b
+    }
+
+    // divide — divide a por b (divisao inteira).
+    static Int divide(Int a, Int b) {
+        if (b == 0) {
+            return 0
+        }
+        return a / b
+    }
+}
