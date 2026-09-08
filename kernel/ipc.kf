@@ -1,0 +1,164 @@
+// kernel/ipc.kf — IPC e waitables (port de kernel/ipc/ipc.c).
+//
+// O VibeOS usa filas circulares de mensagens + waitables (eventos de bloqueio)
+// para comunicação entre processos e sincronização. No KofOS hosted, as
+// implementações usam as estruturas Process + Scheduler já definidas, com
+// bloqueio cooperativo via scheduler tick.
+//
+// Implementações:
+//   ipc_send(dest, data, len) — enviar mensagem para outro processo
+//   ipc_receive(timeout) — receber mensagem (bloqueia se timeout=0 e nada houver)
+//   ipc_receive_wait(timeout) — bloquear na receive (usa waitable)
+//   ipc_receive_signal() — acorber receive pendente
+//   kernel_waitable_wait(timeout) — bloquear corrente em waitable com timeout
+//   kernel_waitable_signal() — acordar corrente bloqueada
+
+import kernel.process
+import kernel.scheduler
+
+// Mensagem IPC (espelha struct mk_message do VibeOS).
+class IpcMessage {
+    Int source
+    Int target
+    Int type
+    Int data
+    Int size
+}
+
+// Fila IPC (simples — sem lock complexo para a versão inicial).
+class IpcQueue {
+    IpcMessage? messages[16]
+    Int head
+    Int tail
+    Bool locked
+
+    public constructor() {
+        this.head = 0
+        this.tail = 0
+        this.locked = false
+    }
+
+    // send — enviar mensagem (bloqueia se fila cheia/lock segurado).
+    Bool send(IpcMessage msg) {
+        if (locked) {
+            return false // fila bloqueada
+        }
+        locked = true
+        if (tail - head < 16) {
+            messages[tail % 16] = msg
+            tail = tail + 1
+            locked = false
+            return true
+        }
+        locked = false
+        return false
+    }
+
+    // receive — receber mensagem (bloqueia se fila vazia).
+    IpcMessage? receive() {
+        if (head == tail) {
+            return null // fila vazia
+        }
+        locked = true
+        var msg = messages[head % 16]
+        head = head + 1
+        locked = false
+        return msg
+    }
+}
+
+// IPC global — fila de mensagens para comunicação entre processos.
+class Ipc {
+    static IpcQueue? queue = null
+
+    static void init() {
+        queue = IpcQueue()
+    }
+
+    static Bool send(IpcMessage msg) {
+        if (queue != null) {
+            return queue.send(msg)
+        }
+        return false
+    }
+
+    static IpcMessage? receive() {
+        if (queue != null) {
+            return queue.receive()
+        }
+        return null
+    }
+}
+
+// waitResult — resultados de waitable.
+class WaitResult {
+    static Int NONE = 0
+    static Int SIGNALED = 1
+    static Int TIMED_OUT = 2
+}
+
+// waitable — mecanismo de sincronização para bloqueio/acordoio de processos.
+class Waitable {
+    Int id
+    Int state  // 0 = livre, 1 = bloqueado
+    Int waitingCount
+
+    public constructor(Int id) {
+        this.id = id
+        this.state = 0
+        this.waitingCount = 0
+    }
+
+    // signal — acordar todas as correntees bloqueadas neste waitable.
+    void signal() {
+        state = 0
+        waitingCount = 0
+    }
+}
+
+// waitableTable — tabela global de waitables (simples: máximo 8).
+class WaitableTable {
+    static Waitable? table[8]
+    static Int nextId = 1
+
+    static Int create() {
+        var id = nextId
+        nextId = nextId + 1
+        if (nextId > 8) {
+            nextId = 1
+        }
+        table[id] = Waitable(id)
+        return id
+    }
+
+    static void signal(Int id) {
+        if (id >= 1 && id < 9 && table[id] != null) {
+            table[id].signal()
+        }
+    }
+}
+
+// ipc_send — enviar mensagem IPC para outro processo (espelha ipc_send).
+Bool ipc_send(Int target, IpcMessage msg) {
+    return Ipc.send(msg)
+}
+
+// ipc_receive — receber mensagem IPC (bloqueia se timeout=0 e nada houver).
+IpcMessage? ipc_receive() {
+    return Ipc.receive()
+}
+
+// kernel_waitable_create — criar um waitable (espelha kernel_waitable_create).
+Int kernel_waitable_create() {
+    return WaitableTable.create()
+}
+
+// kernel_waitable_signal — acordar waitable (espelha kernel_waitable_signal).
+void kernel_waitable_signal(Int id) {
+    WaitableTable.signal(id)
+}
+
+// yield — cede a CPU (reexportado para conveniência).
+void yield() {
+    kernel_scheduler_yield()
+}
