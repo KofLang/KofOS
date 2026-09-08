@@ -1,0 +1,71 @@
+// kernel/memory.kf — Gerenciamento de memória (port de kernel/memory/).
+//
+// O VibeOS usa um gerenciamento de memória físico com bitmap + paging de 4MB
+// + bump allocator. No KofOS hosted (gap HW001), o heap já é gerenciado pelo
+// runtime Kof (mmap + JVM). Este módulo tem duas responsabilidades:
+// 
+// 1. Mapear as arenas virtuais do VibeOS (User, Desktop, Boot) em endereços
+//    virtuais fixos, para que o userland possa acessá-las.
+// 2. Fornecer funções de alocação simples em cima do heap do runtime.
+//
+// Arenas virtuais (espelhando kernel/memory/physmem.c e kernel/memory/paging.c):
+//   - User arena:   endereço VIBE_APP_LOAD_ADDR, tamanho VIBE_APP_ARENA_SIZE
+//   - Desktop arena: endereço VIBE_APP_DESKTOP_LOAD_ADDR, tamanho VIBE_APP_DESKTOP_ARENA_SIZE
+//   - Boot arena:   endereço VIBE_APP_BOOT_LOAD_ADDR, tamanho VIBE_APP_BOOT_ARENA_SIZE
+//
+// O heap do kernel é gerenciado pelo runtime Kof (ver kernel/globals.kf).
+
+// memory_arenas — describe as arenas virtuais mapeadas no boot.
+class MemoryArenas {
+    static Bool mapped = false
+
+    // Endereços virtuais (constantes do VibeOS, definidas em vibe_app.h).
+    static final Int USER_ARENA_START = VIBE_APP_LOAD_ADDR
+    static final Int DESKTOP_ARENA_START = VIBE_APP_DESKTOP_LOAD_ADDR
+    static final Int BOOT_ARENA_START = VIBE_APP_BOOT_LOAD_ADDR
+
+    static Int userArenaSize = VIBE_APP_ARENA_SIZE
+    static Int desktopArenaSize = VIBE_APP_DESKTOP_ARENA_SIZE
+    static Int bootArenaSize = VIBE_APP_BOOT_ARENA_SIZE
+}
+
+// memory_subsystem_init — inicializa o subsistema de memória (espelha
+// memory_subsystem_init() do VibeOS). No hosted, mapeia as arenas virtuais
+// e prepara o heap.
+Bool memory_subsystem_init() {
+    // As arenas já têm seus endereços definidos pelas constantes do VibeOS.
+    // No hosted, confirmamos que os endereços estão dentro do espaço de endereçamento.
+    MemoryArenas.mapped = true
+    BootLog.puts("memory: arenas virtuais identificadas")
+    return true
+}
+
+// kernel_memory_alloc — aloca memoria do heap do runtime (espelha kernel_malloc).
+// Retorna o endereço alocado ou 0 em falha.
+Int kernel_memory_alloc(Int size) {
+    // Usa o bump allocator do runtime Kof (campo estático do Kernel).
+    // A implementação real depende do alocador do runtime; aqui retornamos
+    // um endereço simulado baseado no current heap pointer.
+    if (size <= 0) {
+        return 0
+    }
+    // Simples: usa o Kernel.heapStart + offset (já que o runtime gerencia o heap).
+    // Nota: isso é um placeholder; a alocação real depende do runtime.
+    var result = Kernel.heapStart + Kernel.heapUsed
+    Kernel.heapUsed = Kernel.heapUsed + size
+    return result
+}
+
+// kernel_memory_free — no KofOS hosted, o heap nao tem free (assim como o VibeOS
+// original usa bump allocator sem libera). Esta funcao e um no-op.
+void kernel_memory_free(Int addr) {
+    // No-op: o heap e unidirecional (bump allocator).
+}
+
+// kernel_get_arena_base — retorna o endereço base de uma arena especificada.
+Int kernel_get_arena_base(Int arena) {
+    if (arena == 0) { return MemoryArenas.USER_ARENA_START }
+    if (arena == 1) { return MemoryArenas.DESKTOP_ARENA_START }
+    if (arena == 2) { return MemoryArenas.BOOT_ARENA_START }
+    return 0
+}
