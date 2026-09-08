@@ -9,7 +9,6 @@ import kof.time
 import kernel.boot
 import kernel.globals
 import kernel.process
-import kernel.scheduler
 
 // UserlandGlobals — estado do userland.
 class UserlandGlobals {
@@ -43,11 +42,7 @@ Bool kernel_userland_bootstrap() {
     val shellPid = Kernel.allocatePid()
     var shellProc = Process(shellPid, "userland.app", ProcKind.USER, 4)
 
-    // Agenda no scheduler.
-    if (SchedulerGlobals.instance != null) {
-        SchedulerGlobals.instance.addTask(initProc)
-        SchedulerGlobals.instance.addTask(shellProc)
-    }
+    // Agenda os processosinit e shell executando-os em sequência.
 
     // Executa as fases em sequência (cooperativo inicial).
     kernel_init_process()

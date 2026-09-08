@@ -1,23 +1,62 @@
 // kernel/process.kf — Processos (port de kernel/process/process.c).
 //
 // O VibeOS modela um processo com: pid, stack, contexto (trap frame), estado,
-// tipo (kernel/ring0 vs app/ring3), prioridade, runtime ticks e next (lista).
-// No KofOS (hosted), o "contexto" é um objeto Process que carrega o estado
-// executável e uma função de entrada; a preempção é cooperativa via
-// scheduler + timer HAL.
+// tipo (user/ring3 vs service), prioridade, runtime ticks e next (lista).
+// No KofOS (hosted, gap HW001), o "contexto" é o estado executável do processo
+// e uma função de entrada; a preempção é cooperativa via scheduler + timer.
 
-// Estados de processo (espelha o enum do VibeOS).
+// Estados de processo (espelha kernel/process.h:9).
 class ProcState {
     static Int READY = 0
     static Int RUNNING = 1
     static Int BLOCKED = 2
-    static Int DONE = 3
+    static Int TERMINATED = 3
 }
 
-// Tipos de processo (kind do VibeOS).
+// Tipos de processo (kernel/process.h:16).
 class ProcKind {
-    static Int KERNEL = 0
-    static Int USER = 1
+    static Int USER = 0
+    static Int SERVICE = 1
+    static Int KERNEL_TASK = 2
+}
+
+// Prioridades (kernel/process.h:22).
+class Priority {
+    static Int DESKTOP_USER = 0
+    static Int INPUT = 1
+    static Int VIDEO = 2
+    static Int STORAGE = 3
+    static Int AUDIO = 4
+    static Int NETWORK = 5
+    static Int APP = 6
+    static Int BACKGROUND = 7
+}
+
+// Resultados de espera (userland_api.h:585).
+class WaitResult {
+    static Int NONE = 0
+    static Int SIGNALED = 1
+    static Int TIMED_OUT = 2
+    static Int CANCELED = 3
+}
+
+// Classes de espera (userland_api.h:600).
+class WaitClass {
+    static Int NONE = 0
+    static Int GENERIC = 1
+    static Int IPC = 2
+    static Int INPUT = 3
+    static Int STORAGE = 4
+    static Int FILESYSTEM = 5
+    static Int VIDEO = 6
+    static Int AUDIO = 7
+    static Int NETWORK = 8
+    static Int SUPERVISION = 9
+}
+
+// Timeslice do scheduler (scheduler.c:39).
+class SchedConsts {
+    static Int TIMESLICE_TICKS = 4
 }
 
 // Process — um processo/tarefa do KofOS.
@@ -26,27 +65,45 @@ class Process {
     String name
     Int state
     Int kind
-    Int priority
+    Int priorityTier
+    Int taskClass
     Int runtimeTicks
     Int contextSwitches
-    Int entryPoint
-    Int stackSize
     Int waitChannel
+    Int waitResult
+    Int waitEventClass
+    Int wakeBoostBudget
+    Int currentCpu
+    Int lastCpu
+    Int preferredCpu
+    Int stackSize
     Bool preemptable
+    // entry — função de entrada do processo (representada por um id/descritor
+    // de função; no hosted o "frame" é o próprio call stack da thread Kof).
+    Int entryPoint
+    Bool contextReady
     Process? next
 
-    public constructor(Int pid, String name, Int kind, Int priority) {
+    public constructor(Int pid, String name, Int kind, Int priorityTier) {
         this.pid = pid
         this.name = name
         this.kind = kind
-        this.priority = priority
+        this.priorityTier = priorityTier
         state = ProcState.READY
+        taskClass = 0
         runtimeTicks = 0
         contextSwitches = 0
-        entryPoint = 0
-        stackSize = 0
         waitChannel = -1
+        waitResult = WaitResult.NONE
+        waitEventClass = WaitClass.NONE
+        wakeBoostBudget = 0
+        currentCpu = -1
+        lastCpu = -1
+        preferredCpu = -1
+        stackSize = 0
         preemptable = true
+        entryPoint = 0
+        contextReady = false
         next = null
     }
 }

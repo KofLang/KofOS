@@ -7,7 +7,6 @@
 import kof.time
 import kernel.hal
 import kernel.globals
-import kernel.scheduler
 import userland
 
 // kernel_hal_init — instancia os HALs (espelha hal_init()).
@@ -57,11 +56,11 @@ Bool kernel_storage_init() {
     return false
 }
 
-// kernel_scheduler_init — inicializa o scheduler (espelha scheduler_init()).
-Bool kernel_scheduler_init() {
-    // kernel/scheduler.kf
-    return kernel_scheduler_bootstrap()
-}
+// kernel_scheduler_init — desabilitado temporariamente
+// Bool kernel_scheduler_init() {
+//     // kernel/scheduler.kf
+//     return kernel_scheduler_bootstrap()
+// }
 
 // kernel_vfs_init — inicializa VFS (espelha vfs_init()).
 Bool kernel_vfs_init() {

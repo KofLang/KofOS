@@ -46,6 +46,7 @@ void kernel_entry() {
 
     // 2. hal init
     kernel_hal_init()
+    // kernel_scheduler_init() — desabilitado temporariamente
     BootGlobals.halReady = true
     BootGlobals.mark("hal_init")
 
@@ -84,12 +85,12 @@ void kernel_entry() {
     BootLog.puts("Storage OK")
     BootGlobals.mark("storage")
 
-    // 9. scheduler + driver manager
+    // 9. scheduler + driver manager (disabled — bytecode putfield gap)
     BootLog.puts("Initializing scheduler/driver manager...")
-    kernel_scheduler_init()
-    BootLog.puts("Scheduler OK")
-    BootGlobals.schedulerReady = true
-    BootGlobals.mark("scheduler")
+    // kernel_scheduler_init()
+    // BootLog.puts("Scheduler OK")
+    // BootGlobals.schedulerReady = true
+    // BootGlobals.mark("scheduler")
 
     // 10. VFS + services microkernel
     BootLog.puts("Initializing VFS...")
