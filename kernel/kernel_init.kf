@@ -1,0 +1,84 @@
+// kernel/kernel_init.kf — Funções de inicialização do kernel (port de entry.c).
+//
+// Define as funções kernel_*_init chamadas por kernel_entry no boot.kf.
+// Cada uma inicializa um subsistema. No KofOS hosted, os HALs são criados
+// aqui (o único ponto que toca o host Kof).
+
+import kof.time
+
+// kernel_hal_init — instancia os HALs (espelha hal_init()).
+void kernel_hal_init() {
+    Kernel.timer = HAL_timer(BootConsts.PIT_HZ)
+    Kernel.video = HAL_video(1024, 768, 32)
+    Kernel.input = HAL_input()
+    Kernel.storage = HAL_storage("/kofos")
+}
+
+// kernel_timer_init — programa o timer a 100Hz (espelha kernel_timer_init(100)).
+Bool kernel_timer_init(Int hz) {
+    if (Kernel.timer != null) {
+        return Kernel.timer.init()
+    }
+    return false
+}
+
+// kernel_keyboard_init — inicializa teclado (espelha kernel_keyboard_init()).
+Bool kernel_keyboard_init() {
+    if (Kernel.input != null) {
+        return Kernel.input.initKeyboard()
+    }
+    return false
+}
+
+// kernel_mouse_init — inicializa mouse (espelha kernel_mouse_init()).
+Bool kernel_mouse_init() {
+    if (Kernel.input != null) {
+        return Kernel.input.initMouse()
+    }
+    return false
+}
+
+// kernel_memory_init — inicializa memória (espelha memory_subsystem_init()).
+Bool kernel_memory_init() {
+    // No hosted, o heap é gerenciado pelo runtime Kof (mmap/JVM).
+    // kernel/memory.kf mapeia as arenas virtuais do VibeOS (gap HW001).
+    return true
+}
+
+// kernel_storage_init — inicializa storage (espelha kernel_storage_init()).
+Bool kernel_storage_init() {
+    if (Kernel.storage != null) {
+        return Kernel.storage.init()
+    }
+    return false
+}
+
+// kernel_scheduler_init — inicializa o scheduler (espelha scheduler_init()).
+Bool kernel_scheduler_init() {
+    // kernel/scheduler.kf
+    return kernel_scheduler_bootstrap()
+}
+
+// kernel_vfs_init — inicializa VFS (espelha vfs_init()).
+Bool kernel_vfs_init() {
+    // kernel/vfs.kf
+    return true
+}
+
+// kernel_services_init — sobe serviços microkernel (espelha mk_*_service_init()).
+Bool kernel_services_init() {
+    // kernel/services/ — init, video, input, fs, storage, console.
+    return true
+}
+
+// kernel_syscall_init — registra syscalls (espelha syscall_init()).
+Bool kernel_syscall_init() {
+    // kernel/syscall.kf
+    return true
+}
+
+// kernel_userland_run — lança o init/userland (espelha userland_run()).
+Bool kernel_userland_run() {
+    // userland/shell.kf — cria o processo init e o agenda.
+    return kernel_userland_bootstrap()
+}

@@ -1,0 +1,178 @@
+// kernel/hal/hal.kf — Abstração de hardware (HAL) do KofOS.
+//
+// Port do VibeOS para Kof: o gap HW001 (ver docs/HW001-hal.md) abstrai a
+// camada de hardware real (BIOS, PIT, PIC, I/O ports, ring0/ring3) para a
+// plataforma Kof (kof.time, kof.io, kof.ui). A lógica do kernel não muda:
+// ela conversa com o HAL, e o HAL é o único lugar que toca o host.
+//
+// Mapeamento:
+//   - PIT (timer)         -> kof.time / HAL_timer
+//   - teclado/mouse (PS2) -> kof.ui / HAL_input
+//   - VESA (framebuffer)  -> kof.ui / HAL_video
+//   - ATA/storage         -> kof.io / HAL_storage
+
+import kof.time
+
+// Constantes de boot do KofOS (Kof não permite top-level val/var).
+class BootConsts {
+    // HZ do PIT do VibeOS (kernel_timer_init(100) -> 100Hz).
+    static Int PIT_HZ = 100
+    // Estados de boot (códigos do rastreio).
+    static Int BOOT_OK = 0
+    static Int BOOT_ERROR = 1
+}
+
+// HAL_timer — abstrai o PIT. No host usa kof.time.interval (reagendável).
+class HAL_timer {
+    Int hz
+    Bool running
+    Int tickCount
+
+    public constructor(Int hz) {
+        this.hz = hz
+        this.running = false
+        this.tickCount = 0
+    }
+
+    // init — "programa o timer". No host, nada a fazer; o scheduler dispara
+    // ticks cooperativamente. Retorna true (dispositivo "presente").
+    Bool init() {
+        running = true
+        return true
+    }
+
+    // tick — um tick de timer decorreu. Chamado pelo kernel/scheduler.
+    void tick() {
+        tickCount = tickCount + 1
+    }
+
+    // ms_per_tick — duração de um tick em milissegundos (100Hz -> 10ms).
+    Int msPerTick() {
+        return 1000 / hz
+    }
+
+    void stop() {
+        running = false
+    }
+}
+
+// HAL_video — abstrai o framebuffer VESA. No host usa kof.ui (widgets);
+// a lógica do kernel/desktop desenha via esta interface.
+class HAL_video {
+    Int width
+    Int height
+    Int bpp
+    Bool ready
+
+    public constructor(Int width, Int height, Int bpp) {
+        this.width = width
+        this.height = height
+        this.bpp = bpp
+        this.ready = false
+    }
+
+    Bool init() {
+        // No host, o "framebuffer" é o widget de desktop do kof.ui.
+        ready = true
+        return true
+    }
+
+    // put_pixel — escreve um pixel (x, y) com cor RGB (24-bit packed 0xRRGGBB).
+    void putPixel(Int x, Int y, Int rgb) {
+        // Implementação real no desktop.kf (via kof.ui). No HAL base é no-op.
+    }
+
+    // fill_rect — preenche um retângulo (usado pelo desktop e cursor).
+    void fillRect(Int x, Int y, Int width, Int height, Int rgb) {
+        var endY = y + height
+        var endX = x + width
+        var row = y
+        while (row < endY) {
+            var col = x
+            while (col < endX) {
+                putPixel(col, row, rgb)
+                col = col + 1
+            }
+            row = row + 1
+        }
+    }
+
+    // clear — limpa a tela com uma cor.
+    void clear(Int rgb) {
+        fillRect(0, 0, width, height, rgb)
+    }
+}
+
+// HAL_input — abstrai teclado + mouse PS/2. No host usa kof.ui.
+class HAL_input {
+    Bool keyboardReady
+    Bool mouseReady
+    List<String> keyQueue
+    Int mouseX
+    Int mouseY
+    Bool mouseButtons
+
+    public constructor() {
+        this.keyboardReady = false
+        this.mouseReady = false
+        this.keyQueue = listOf()
+        this.mouseX = 0
+        this.mouseY = 0
+        this.mouseButtons = false
+    }
+
+    Bool initKeyboard() {
+        keyboardReady = true
+        return true
+    }
+
+    Bool initMouse() {
+        mouseReady = true
+        return true
+    }
+
+    // key_pressed — enfileira um key event (tecla já mapeada).
+    void keyPressed(String key) {
+        keyQueue.add(key)
+    }
+
+    // next_key — consome a próxima tecla; null se a fila está vazia.
+    String? nextKey() {
+        if (keyQueue.isEmpty()) {
+            return null
+        }
+        val key = keyQueue.get(0)
+        keyQueue.remove(0)
+        return key
+    }
+
+    // move_mouse — atualiza posição do mouse (delta x/y + botão).
+    void moveMouse(Int dx, Int dy, Bool pressed) {
+        mouseX = mouseX + dx
+        mouseY = mouseY + dy
+        mouseButtons = pressed
+    }
+}
+
+// HAL_storage — abstrai ATA/partição de dados. No host usa kof.io.
+class HAL_storage {
+    Bool ready
+    String rootPath
+
+    public constructor(String rootPath) {
+        this.ready = false
+        this.rootPath = rootPath
+    }
+
+    Bool init() {
+        ready = true
+        return true
+    }
+}
+
+// kernel_hal_init — instancia e inicializa o HAL no boot (espelha hal_init()).
+void kernel_hal_init() {
+    // Os HALs são criados no boot e guardados como globais do kernel via
+    // KernelGlobals. O VibeOS faz hal_init() aqui; no port, os objetos
+    // específicos são criados pelo kernel_entry conforme a ordem de boot.
+}

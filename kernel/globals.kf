@@ -1,0 +1,30 @@
+// kernel/globals.kf — Estado global do kernel KofOS (hosted).
+//
+// O VibeOS usa globals C + arrays fixos. Em Kof, o estado global do kernel
+// vive em campos estáticos desta classe Kernel. (Kof não tem top-level
+// val/var; classes com static são o mecanismo idiomático — ver training.)
+
+// Kernel — singleton de estado do kernel KofOS.
+class Kernel {
+    // HAL instances (setados no boot via kernel_hal_init).
+    static HAL_timer? timer = null
+    static HAL_video? video = null
+    static HAL_input? input = null
+    static HAL_storage? storage = null
+
+    // Boot/estado.
+    static Bool bootComplete = false
+    static Bool preemptionReady = false
+    static Int nextPid = 1
+
+    // Processos (scheduler).
+    static Process? idle = null
+    static Process? current = null
+
+    // next_pid — aloca um pid sequencial (espelha o alocador do VibeOS).
+    static Int nextPid() {
+        val pid = nextPid
+        nextPid = nextPid + 1
+        return pid
+    }
+}

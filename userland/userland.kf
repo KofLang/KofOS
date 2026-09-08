@@ -1,0 +1,52 @@
+// userland/userland.kf — Bootstrap do userland (port de kernel/userland_loader.c).
+//
+// O VibeOS faz userland_run() -> lança o serviço init (MK_SERVICE_INIT) como
+// primeiro processo ring3, depois o shell externo. No KofOS hosted, o
+// bootstrap cria o processo init e o processo shell, agenda-os, e dispara a
+// execução (que, no modo cooperativo inicial, chama as funções de entrada).
+
+import kof.time
+
+// UserlandGlobals — estado do userland.
+class UserlandGlobals {
+    static Bool shellStarted = false
+    static Bool initRan = false
+    static Bool desktopStarted = false
+}
+
+// kernel_init_process — a fase "init" do boot: monta o AppFS mínimo e
+// prepara o userland. Espelha o serviço init do VibeOS.
+void kernel_init_process() {
+    UserlandGlobals.initRan = true
+    BootLog.puts("  init: starting (AppFS)")
+    // PORT-VFS: monta AppFS aqui.
+    // PORT-SERVICES: sobe serviços aqui.
+}
+
+// kernel_shell_main — a shell externa (espelha userland.app autostartada).
+void kernel_shell_main() {
+    UserlandGlobals.shellStarted = true
+    BootLog.puts("  shell: ready")
+}
+
+// kernel_userland_bootstrap — cria e agenda init + shell (espelha userland_run).
+Bool kernel_userland_bootstrap() {
+    // Processo init (SUPERVISION).
+    val initPid = Kernel.nextPid()
+    var initProc = Process(initPid, "init", ProcKind.USER, 5)
+
+    // Processo shell (userland.app).
+    val shellPid = Kernel.nextPid()
+    var shellProc = Process(shellPid, "userland.app", ProcKind.USER, 4)
+
+    // Agenda no scheduler.
+    if (SchedulerGlobals.instance != null) {
+        SchedulerGlobals.instance.addTask(initProc)
+        SchedulerGlobals.instance.addTask(shellProc)
+    }
+
+    // Executa as fases em sequência (cooperativo inicial).
+    kernel_init_process()
+    kernel_shell_main()
+    return true
+}

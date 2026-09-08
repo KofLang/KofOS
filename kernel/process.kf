@@ -1,0 +1,52 @@
+// kernel/process.kf — Processos (port de kernel/process/process.c).
+//
+// O VibeOS modela um processo com: pid, stack, contexto (trap frame), estado,
+// tipo (kernel/ring0 vs app/ring3), prioridade, runtime ticks e next (lista).
+// No KofOS (hosted), o "contexto" é um objeto Process que carrega o estado
+// executável e uma função de entrada; a preempção é cooperativa via
+// scheduler + timer HAL.
+
+// Estados de processo (espelha o enum do VibeOS).
+class ProcState {
+    static Int READY = 0
+    static Int RUNNING = 1
+    static Int BLOCKED = 2
+    static Int DONE = 3
+}
+
+// Tipos de processo (kind do VibeOS).
+class ProcKind {
+    static Int KERNEL = 0
+    static Int USER = 1
+}
+
+// Process — um processo/tarefa do KofOS.
+class Process {
+    Int pid
+    String name
+    Int state
+    Int kind
+    Int priority
+    Int runtimeTicks
+    Int contextSwitches
+    Int entryPoint
+    Int stackSize
+    Int? waitChannel
+    Bool preemptable
+    Process? next
+
+    public constructor(Int pid, String name, Int kind, Int priority) {
+        this.pid = pid
+        this.name = name
+        this.state = ProcState.READY
+        this.kind = kind
+        this.priority = priority
+        this.runtimeTicks = 0
+        this.contextSwitches = 0
+        this.entryPoint = 0
+        this.stackSize = 0
+        this.waitChannel = null
+        this.preemptable = true
+        this.next = null
+    }
+}

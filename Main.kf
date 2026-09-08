@@ -1,0 +1,14 @@
+// Main.kf — Entry point do KofOS.
+//
+// No VibeOS, o fluxo é BIOS -> MBR -> stage1 -> stage2 -> KERNEL -> kernel_entry.
+// No KofOS (hosted, gap HW001), o "stage2" é a JVM/runtime Kof que carrega
+// esta aplicação; Main.kf entrega o controle ao kernel_entry, preservando o
+// mesmo fluxo de boot como fases de uma aplicação Kof.
+
+import kof.time
+
+main() {
+    BootLog.puts("KofOS booting via host runtime")
+    kernel_entry()
+    BootLog.puts("KofOS running")
+}
