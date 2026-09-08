@@ -1,0 +1,235 @@
+// kernel/vfs.kf — Sistema de Arquivos Virtuais (port de kernel/fs/).
+//
+// O VibeOS usa um VFS simples sobre ramfs + serviços de filesystem.
+// No KofOS hosted (gap HW001), o VFS é implementado em cima do sistema
+// de arquivos do host (kof.io) mais um ramfs simples em memória.
+//
+// Structs e constantes do VibeOS (kernel/fs/fs.h e includes).
+// O VFS usa 'struct file', 'struct inode', 'struct super_operation'
+// etc. No Kof, usamos tipos simpler dado o gap de implementação.
+
+// File flags.
+class FOpenFlags {
+    static Int READ = 1 << 0
+    static Int WRITE = 1 << 1
+    static Int CREATE = 1 << 2
+    static Int TRUNC = 1 << 3
+}
+
+// File system type.
+class FsType {
+    static Int RAMFS = 1
+    static Int APPFS = 2
+}
+
+// Superblock — informação do sistema de arquivos.
+class Superblock {
+    Int fs_type
+    Int block_size
+    Int size
+    Int flags
+    Int n_free
+    Int root_inode
+}
+
+// Inode — informação do nó do arquivo.
+class Inode {
+    Int i_mode    // type + permissions
+    Int i_size
+    Int i_blocks
+    Int i_atime
+    Int i_mtime
+    Int i_ctime
+    Int i_dev
+    Int i_private // ptr to fs-specific data
+}
+
+// File — descrição aberta de arquivo.
+class File {
+    Int f_inode
+    Int f_pos
+    Int f_flags
+    Int f_count
+}
+
+// FsOperations — operações do sistema de arquivos.
+class FsOperations {
+    Int (*open) (struct inode *inode, struct file *file)
+    Int (*read) (struct file *file, char *buf, Int count)
+    Int (*write) (struct file *file, char *buf, Int count)
+    Int (*release) (struct file *file)
+    Int (*fsync) (struct file *file)
+}
+
+// dentry — entrada do diretório (simplificado).
+class Dentry {
+    Char d_name[28]
+    Int d_inode
+    Int d_parent
+}
+
+// ramfs_in_memory — representa um arquivo no ramfs.
+class RamFile {
+    Char name[28]
+    Char content[1024]
+    Int size
+}
+
+// ramfs — filesystem em memória simples.
+class RamFs {
+    RamFile files[32]
+    Int file_count
+    Superblock s
+
+    RamFs() {
+        file_count = 0
+        s.fs_type = FsType.RAMFS
+        s.block_size = 4096
+        s.size = 0
+        s.n_free = 32
+        s.root_inode = 0
+    }
+
+    // find_file — encontra um arquivo pelo nome.
+    RamFile* find_file(Char* name) {
+        Int i = 0
+        while (i < file_count) {
+            if (strcmp(files[i].name, name) == 0) {
+                return &files[i]
+            }
+            i = i + 1
+        }
+        return null
+    }
+
+    // create_file — criar um novo arquivo.
+    Int create_file(Char* name, Char* content, Int size) {
+        if (file_count >= 32) {
+            return -1
+        }
+        RamFile* f = &files[file_count]
+        strcpy(f.name, name)
+        strcpy(f.content, content)
+        f.size = size
+        file_count = file_count + 1
+        return 0
+    }
+
+    // read_file — ler um arquivo.
+    Int read_file(Char* name, Char* buf, Int size) {
+        RamFile* f = find_file(name)
+        if (f == null) {
+            return -1
+        }
+        Int copy = min(size, f.size)
+        strcpy(buf, f.content)
+        return copy
+    }
+
+    // write_file — escrever em um arquivo.
+    Int write_file(Char* name, Char* content, Int size) {
+        RamFile* f = find_file(name)
+        if (f == null) {
+            return create_file(name, content, size)
+        }
+        strcpy(f.content, content)
+        f.size = size
+        return size
+    }
+
+    // delete_file — deletar um arquivo.
+    Int delete_file(Char* name) {
+        Int i = 0
+        while (i < file_count) {
+            if (strcmp(files[i].name, name) == 0) {
+                // shift down
+                while (i < file_count - 1) {
+                    files[i] = files[i + 1]
+                    i = i + 1
+                }
+                file_count = file_count - 1
+                return 0
+            }
+            i = i + 1
+        }
+        return -1
+    }
+}
+
+// VFS global.
+class Vfs {
+    RamFs ramfs
+    Superblock s
+
+    Vfs() {
+        ramfs = RamFs()
+        s = ramfs.s
+    }
+}
+
+// kernel_vfs_init — inicializa o VFS (espelha vfs_init()).
+Void kernel_vfs_init() {
+    // VFS inicializado sobre ramfs.
+    BootLog.puts("filesystem: ramfs initialized")
+}
+
+// kernel_open — abrir arquivo (espelha sys_open).
+Int kernel_open(Char* path, Int flags) {
+    // Tenta encontrar/criar no ramfs
+    Var result = ramfs.create_file(path, "", 0)
+    return result
+}
+
+// kernel_read — ler arquivo (espelha sys_read).
+Int kernel_read(Char* path, Char* buf, Int count) {
+    Var result = ramfs.read_file(path, buf, count)
+    return result
+}
+
+// kernel_write — escrever arquivo (espelha sys_write).
+Int kernel_write(Char* path, Char* buf, Int count) {
+    Var result = ramfs.write_file(path, buf, count)
+    return result
+}
+
+// kernel_close — fechar arquivo (no-op placeholder).
+Void kernel_close(Char* path) {
+    // no-op no hosted
+}
+
+// kernel_stat — obter estatísticas do arquivo (placeholder).
+Int kernel_stat(Char* path, Int* buf) {
+    // placeholder
+    buf[0] = 0
+    return 0
+}
+
+// AppFS — App Filesystem. No VibeOS, apps são carregados do sector de boot.
+// No KofOS hosted, simulamos o carregamento a partir do sistema de arquivos do host.
+class AppFs {
+    // list_app_files — lista arquivos de app (placeholder).
+    // No hosted, lista arquivos do ramfs com prefixo "app_".
+    List list_app_files() {
+        List result = List()
+        Int i = 0
+        while (i < ramfs.file_count) {
+            if (str.starts_with(ramfs.files[i].name, "app_")) {
+                result.append(ramfs.files[i])
+            }
+            i = i + 1
+        }
+        return result
+    }
+}
+
+// VFS global instance.
+Static Vfs vfs;
+
+// VFS operations table (simplificado).
+Static FsOperations vfs_ops = {
+    .open = kernel_open,
+    .read = kernel_read,
+    .write = kernel_write,
+    .release = kernel_close,
+    .fsync = kernel_close
+}
