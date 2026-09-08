@@ -16,7 +16,7 @@ Estados: `ABERTO` · `EM CURSO` · `FEITO` · `BLOQUEADO`.
 
 ## PRÓXIMO PASSO (re-dispacho lê isto)
 
-**PRÓXIMO PASSO (07/09)**: boot + testes E2E FEITOS (este commit) — `Main.kf` → `kernel_entry`
+**PRÓXIMO PASSO (07/09)**: userland desktop + apps
 → HAL → memory → storage → scheduler → VFS → syscalls → userland (init + shell).
 Prova: `kof run Main.kf` imprime a sequência de boot completa até "done" + `kof
 test boot_test.kf` (2 testes PASS). Gap HW001 documentado em AGENTS.md.
