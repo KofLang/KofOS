@@ -32,10 +32,10 @@ ticks e que um processo bloqueado não roda.
 | Gap/Item | Estado | Dono | Branch | Arquivos principais | Notas |
 |---|---|---|---|---|---|
 | **PORT-TODO** — fundação (boot + HAL + Main) | `FEITO` | agente-kofos | `main` | `Main.kf`, `kernel/boot.kf`, `kernel/hal/hal.kf`, `kernel/kernel_init.kf`, `kernel/globals.kf`, `kernel/process.kf`, `kernel/scheduler.kf`, `userland/userland.kf`, `boot_test.kf` | 07/09: boot→kernel_entry→init→shell→done roda. 2 testes PASS. Mecanismo de import descoberto: `import <dir>.<arquivo>` carrega `<dir>/<arquivo>.kf`; testes E2E na raiz do módulo. |
+| **PORT-SERVICES** — microkernel (init/video/input/fs/storage/console) | `ABERTO` | — | — | `kernel/services/` | com gap: video.c 2000+, audio.c 10000+ linhas; PRÓXIMO: userland desktop + apps
 | **PORT-SCHED** — scheduler com preempção real | `ABERTO` | — | — | `kernel/scheduler.kf` (a remover — gap bytecode putfield Int) | PRÓXIMO: reimplementar scheduler em Kof com `kof.time.interval`, timeslice, algoritmo de score (prioridade/afinidade/wake-boost), bloqueio/espera (waitable), round-robin com prioridade. Pendência: gap de field-assign de `Int` no compilador Kof (regra R6 — nunca silencioso). |
 | **PORT-MEM** — heap, páginas, arenas | `ABERTO` | — | — | `kernel/memory.kf` | após scheduler |
 | **PORT-SYSCALL** — syscalls + IPC + waitable | `ABERTO` | — | — | `kernel/syscall.kf`, `kernel/ipc.kf` | após mem |
-| **PORT-SERVICES** — microkernel (init/video/input/fs/storage/console) | `ABERTO` | — | — | `kernel/services/` | após syscall |
 | **PORT-VFS** — VFS + ramfs + AppFS | `ABERTO` | — | — | `kernel/vfs.kf` | após services |
 | **PORT-USERLAND** — shell + desktop + apps | `ABERTO` | — | — | `userland/` | após VFS |
 | **PORT-E2E** — boot→shell→desktop + docs + branding | `ABERTO` | — | — | `README.md`, `docs/` | final |
@@ -51,4 +51,3 @@ ticks e que um processo bloqueado não roda.
 | Gap/Item | Prioridade | Escopo | Notas |
 |---|---|---|---|
 | **HW001** | alta | Gap de plataforma: kernel bare-metal abstraído | decisão de design, não silencioso |
-| **PORT-* (acima)** | alta→baixa | fases do port | na ordem da tabela |
